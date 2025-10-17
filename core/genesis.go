@@ -22,8 +22,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"gopkg.in/yaml.v2"
 	"math/big"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	ethCommon "github.com/ethereum/go-ethereum/common"
@@ -60,7 +63,7 @@ const (
 	// ContractDeployerInitFund is the initial fund for the contract deployer account in testnet/devnet.
 	ContractDeployerInitFund = 10000000000
 	// InitFreeFund is the initial fund for permissioned accounts for testnet/devnet/
-	InitFreeFund = 100
+	InitFreeFund = 1000000
 )
 
 var (
@@ -84,6 +87,8 @@ type Genesis struct {
 	ShardStateHash common.Hash          `json:"shardStateHash" gencodec:"required"`
 	ShardState     shard.State          `json:"shardState"     gencodec:"required"`
 
+	GenesisAccountsDir string `json:"genesis_accounts_dir" yaml:"genesis_accounts_dir"`
+
 	// These fields are used for consensus tests. Please don't use them
 	// in actual genesis blocks.
 	Number     uint64      `json:"number"`
@@ -93,7 +98,7 @@ type Genesis struct {
 
 // NewGenesisSpec creates a new genesis spec for the given network type and shard ID.
 // Note that the shard state is NOT initialized.
-func NewGenesisSpec(netType nodeconfig.NetworkType, shardID uint32) *Genesis {
+func NewGenesisSpec(netType nodeconfig.NetworkType, shardID uint32, configPath string) *Genesis {
 	genesisAlloc := make(GenesisAlloc)
 	chainConfig := params.ChainConfig{}
 	gasLimit := params.GenesisGasLimit
@@ -139,7 +144,9 @@ func NewGenesisSpec(netType nodeconfig.NetworkType, shardID uint32) *Genesis {
 		}
 	}
 
-	return &Genesis{
+	utils.Logger().Info().Msgf("Genesis config: %s", configPath)
+
+	gen := &Genesis{
 		Config:    &chainConfig,
 		Factory:   blockfactory.NewFactory(&chainConfig),
 		Alloc:     genesisAlloc,
@@ -148,6 +155,29 @@ func NewGenesisSpec(netType nodeconfig.NetworkType, shardID uint32) *Genesis {
 		Timestamp: 1561734000, // GMT: Friday, June 28, 2019 3:00:00 PM. PST: Friday, June 28, 2019 8:00:00 AM
 		ExtraData: []byte("Harmony for One and All. Open Consensus for 10B."),
 	}
+
+	if len(configPath) > 0 {
+		data, err := os.ReadFile(configPath)
+		if err == nil {
+			if strings.HasSuffix(configPath, "yaml") || strings.HasSuffix(configPath, "yml") {
+				_ = yaml.Unmarshal(data, gen)
+			}
+			if len(gen.GenesisAccountsDir) > 0 {
+				_ = filepath.WalkDir(gen.GenesisAccountsDir, func(path string, d os.DirEntry, err error) error {
+					if strings.HasSuffix(d.Name(), ".key") {
+						addr := common.HexToAddress(strings.TrimSuffix(d.Name(), ".key"))
+						gen.Alloc[addr] = GenesisAccount{
+							Balance: big.NewInt(InitFreeFund).Mul(big.NewInt(InitFreeFund), big.NewInt(denominations.One)),
+						}
+						utils.Logger().Info().Msgf("genesis account: %s, addr: %s, balance: %s", path, addr, gen.Alloc[addr].Balance.String())
+					}
+					return nil
+				})
+			}
+		}
+	}
+
+	return gen
 }
 
 // GenesisAlloc specifies the initial state that is part of the genesis block.
@@ -243,6 +273,7 @@ func (g *Genesis) ToBlock(db ethdb.Database) *types.Block {
 	}
 	statedb, _ := state.New(common.Hash{}, state.NewDatabase(db), nil)
 	for addr, account := range g.Alloc {
+		utils.Logger().Info().Msgf("init genesis account: %s, balance: %s", addr.Hex(), account.Balance.String())
 		statedb.AddBalance(addr, account.Balance)
 		statedb.SetCode(addr, account.Code, false)
 		statedb.SetNonce(addr, account.Nonce)
@@ -280,6 +311,12 @@ func (g *Genesis) ToBlock(db ethdb.Database) *types.Block {
 		Header()
 	statedb.Commit(false)
 	statedb.Database().TrieDB().Commit(root, true)
+
+	statedb, _ = state.New(root, state.NewDatabase(db), nil)
+	for addr, account := range g.Alloc {
+		currBal := statedb.GetBalance(addr)
+		utils.Logger().Info().Msgf("verify genesis account: %s, balance: %s, curr_balance: %s, state_root: %s", addr.Hex(), account.Balance.String(), currBal.String(), root.Hex())
+	}
 
 	return types.NewBlock(head, nil, nil, nil, nil, nil)
 }
@@ -343,12 +380,12 @@ func (g *Genesis) MustCommit(db ethdb.Database) *types.Block {
 // GetGenesisSpec for a given shard
 func GetGenesisSpec(shardID uint32) *Genesis {
 	if shard.Schedule.GetNetworkID() == shardingconfig.MainNet {
-		return NewGenesisSpec(nodeconfig.Mainnet, shardID)
+		return NewGenesisSpec(nodeconfig.Mainnet, shardID, "")
 	}
 	if shard.Schedule.GetNetworkID() == shardingconfig.LocalNet {
-		return NewGenesisSpec(nodeconfig.Localnet, shardID)
+		return NewGenesisSpec(nodeconfig.Localnet, shardID, "")
 	}
-	return NewGenesisSpec(nodeconfig.Testnet, shardID)
+	return NewGenesisSpec(nodeconfig.Testnet, shardID, "")
 }
 
 // GetInitialFunds for a given shard

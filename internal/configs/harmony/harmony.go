@@ -153,6 +153,9 @@ type GeneralConfig struct {
 	TraceEnable            bool
 	EnablePruneBeaconChain bool
 	RunElasticMode         bool
+	GenesisConfigFile      string
+	ShardNum               int
+	ShardSize              int
 }
 
 type TiKVConfig struct {

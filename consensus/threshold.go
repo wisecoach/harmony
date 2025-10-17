@@ -20,6 +20,7 @@ func (consensus *Consensus) didReachPrepareQuorum() error {
 		utils.Logger().Warn().Err(err).Msg("[OnPrepare] leader not found")
 		return err
 	}
+	utils.Logger().Info().Msgf("[OnPrepare] Leader found, sending prepared message, leader: %s", leaderPriKey.Pub.Hex())
 	// Construct and broadcast prepared message
 	networkMessage, err := consensus.construct(
 		msg_pb.MessageType_PREPARED, nil, []*bls.PrivateKeyWrapper{leaderPriKey},

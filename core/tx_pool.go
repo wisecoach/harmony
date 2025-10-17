@@ -550,13 +550,14 @@ func (pool *TxPool) reset(oldHead, newHead *block.Header) {
 		utils.Logger().Error().Err(err).Msg("Failed to reset txpool state")
 		return
 	}
+	utils.Logger().Info().Msgf("Resetting transaction pool to block #%v: root=%s, balance=%s", newHead.Number(), newHead.Root().Hex(), statedb.GetBalance(common.HexToAddress("0x46bcf2a321aec73b3ebad6ba7c23a9dfda1fe323")).String())
 	pool.currentState = statedb
 	pool.pendingState = state.ManageState(statedb)
 	pool.currentMaxGas = newHead.GasLimit()
 
 	// Inject any transactions discarded due to reorgs
 	utils.Logger().Debug().Int("count", len(reinject)).Msg("Reinjecting stale transactions")
-	//senderCacher.recover(pool.signer, reinject)
+	// senderCacher.recover(pool.signer, reinject)
 	pool.addTxsLocked(reinject, false)
 
 	// validate the pool of pending transactions, this will remove
@@ -811,6 +812,7 @@ func (pool *TxPool) validateTx(tx types.PoolTransaction, local bool) error {
 	stakingTx, isStakingTx := tx.(*staking.StakingTransaction)
 	if !isStakingTx || (isStakingTx && stakingTx.StakingType() != staking.DirectiveDelegate) {
 		if pool.currentState.GetBalance(from).Cmp(cost) < 0 {
+			utils.Logger().Error().Err(ErrInsufficientFunds).Msgf("Not enough funds to cover cost of transaction: addr %s, have %v, need %v", from.Hex(), pool.currentState.GetBalance(from), cost)
 			return errors.Wrapf(
 				ErrInsufficientFunds,
 				"current shard-id: %d",
@@ -1231,7 +1233,10 @@ func (pool *TxPool) addTx(tx types.PoolTransaction, local bool) error {
 	pool.mu.Lock()
 	defer pool.mu.Unlock()
 
+	from, _ := tx.SenderAddress()
+
 	// Try to inject the transaction and update any state
+	utils.Logger().Info().Msgf("add tx, addr=%s, nonce=%d", from.Hex(), tx.Nonce())
 	replace, err := pool.add(tx, local)
 	if err != nil {
 		errCause := errors.Cause(err)
@@ -1243,7 +1248,6 @@ func (pool *TxPool) addTx(tx types.PoolTransaction, local bool) error {
 	}
 	// If we added a new transaction, run promotion checks and return
 	if !replace {
-		from, _ := tx.SenderAddress() // already validated
 		pool.promoteExecutables([]common.Address{from})
 	}
 	return nil

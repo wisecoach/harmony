@@ -85,6 +85,7 @@ type CoreTransaction interface {
 	GasLimit() uint64
 	ShardID() uint32
 	ToShardID() uint32
+	CrossShard() bool
 	To() *common.Address
 	Value() *big.Int
 	Data() []byte
@@ -134,6 +135,7 @@ type txdata struct {
 	GasLimit     uint64          `json:"gas"        gencodec:"required"`
 	ShardID      uint32          `json:"shardID"    gencodec:"required"`
 	ToShardID    uint32          `json:"toShardID"  gencodec:"required"`
+	CrossShard   bool            `json:"crossShard" gencodec:"required"`
 	Recipient    *common.Address `json:"to"         rlp:"nil"` // nil means contract creation
 	Amount       *big.Int        `json:"value"      gencodec:"required"`
 	Payload      []byte          `json:"input"      gencodec:"required"`
@@ -169,6 +171,7 @@ func (d *txdata) CopyFrom(d2 *txdata) {
 	d.GasLimit = d2.GasLimit
 	d.ShardID = d2.ShardID
 	d.ToShardID = d2.ToShardID
+	d.CrossShard = d2.CrossShard
 	d.Recipient = copyAddr(d2.Recipient)
 	d.Amount = new(big.Int).Set(d2.Amount)
 	d.Payload = append(d2.Payload[:0:0], d2.Payload...)
@@ -311,6 +314,10 @@ func (tx *Transaction) ShardID() uint32 {
 // ToShardID returns the destination shard id this transaction is going to
 func (tx *Transaction) ToShardID() uint32 {
 	return tx.data.ToShardID
+}
+
+func (tx *Transaction) CrossShard() bool {
+	return tx.data.CrossShard
 }
 
 // Time returns the time at which the transaction was received by the node

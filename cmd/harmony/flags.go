@@ -31,6 +31,9 @@ var (
 		legacyIsArchiveFlag,
 		legacyDataDirFlag,
 
+		genesisConfigFileFlag,
+		shardNumFlag,
+		shardSizeFlag,
 		taraceFlag,
 	}
 
@@ -361,6 +364,23 @@ var (
 		Deprecated: "use --datadir",
 	}
 
+	genesisConfigFileFlag = cli.StringFlag{
+		Name:     "general.genesis-config-file",
+		Usage:    "genesis config file path",
+		DefValue: "",
+	}
+
+	shardNumFlag = cli.IntFlag{
+		Name:     "shard_num",
+		Usage:    "number of shards",
+		DefValue: 2,
+	}
+	shardSizeFlag = cli.IntFlag{
+		Name:     "shard_size",
+		Usage:    "number of nodes in each shard",
+		DefValue: 4,
+	}
+
 	taraceFlag = cli.BoolFlag{
 		Name:     "tracing",
 		Usage:    "indicates if full transaction tracing should be enabled",
@@ -432,6 +452,18 @@ func applyGeneralFlags(cmd *cobra.Command, config *harmonyconfig.HarmonyConfig) 
 		config.General.DataDir = cli.GetStringFlagValue(cmd, dataDirFlag)
 	} else if cli.IsFlagChanged(cmd, legacyDataDirFlag) {
 		config.General.DataDir = cli.GetStringFlagValue(cmd, legacyDataDirFlag)
+	}
+
+	if cli.IsFlagChanged(cmd, genesisConfigFileFlag) {
+		config.General.GenesisConfigFile = cli.GetStringFlagValue(cmd, genesisConfigFileFlag)
+	}
+
+	if cli.IsFlagChanged(cmd, shardNumFlag) {
+		config.General.ShardNum = cli.GetIntFlagValue(cmd, shardNumFlag)
+	}
+
+	if cli.IsFlagChanged(cmd, shardSizeFlag) {
+		config.General.ShardSize = cli.GetIntFlagValue(cmd, shardSizeFlag)
 	}
 
 	if cli.IsFlagChanged(cmd, isOfflineFlag) {

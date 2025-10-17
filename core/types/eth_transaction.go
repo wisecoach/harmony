@@ -170,6 +170,10 @@ func (tx *EthTransaction) ToShardID() uint32 {
 	return tx.shardID()
 }
 
+func (tx *EthTransaction) CrossShard() bool {
+	return false
+}
+
 func (tx *EthTransaction) shardID() uint32 {
 	ethChainIDBase := nodeconfig.GetDefaultConfig().GetNetworkType().ChainConfig().EthCompatibleChainID
 	return uint32(tx.ChainID().Uint64()-ethChainIDBase.Uint64()) + nodeconfig.GetDefaultConfig().ShardID

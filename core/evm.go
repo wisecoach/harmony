@@ -88,6 +88,7 @@ func NewEVMContext(msg Message, header *block.Header, chain ChainContext, author
 		Time:                  header.Time(),
 		VRF:                   vrf,
 		TxType:                0,
+		Nonce:                 msg.Nonce(),
 		CreateValidator:       CreateValidatorFn(header, chain),
 		EditValidator:         EditValidatorFn(header, chain),
 		Delegate:              DelegateFn(header, chain),
@@ -118,7 +119,7 @@ func CreateValidatorFn(ref *block.Header, chain ChainContext) vm.CreateValidator
 		db.SetValidatorFlag(createValidator.ValidatorAddress)
 		db.SubBalance(createValidator.ValidatorAddress, createValidator.Amount)
 
-		//add rosetta log
+		// add rosetta log
 		if rosettaTracer != nil {
 			rosettaTracer.AddRosettaLog(
 				vm.CALL,
@@ -172,7 +173,7 @@ func DelegateFn(ref *block.Header, chain ChainContext) vm.DelegateFunc {
 		db.SubBalance(delegate.DelegatorAddress, balanceToBeDeducted)
 
 		if rosettaTracer != nil && balanceToBeDeducted.Sign() != 0 {
-			//add rosetta log
+			// add rosetta log
 			rosettaTracer.AddRosettaLog(
 				vm.CALL,
 				&vm.RosettaLogAddressItem{
@@ -215,7 +216,7 @@ func DelegateFn(ref *block.Header, chain ChainContext) vm.DelegateFunc {
 					BlockNumber: ref.Number().Uint64(),
 				})
 
-				//add rosetta log
+				// add rosetta log
 				if rosettaTracer != nil {
 					// copy from address
 					fromAccount := common.BytesToAddress(key.Bytes())
@@ -248,7 +249,7 @@ func UndelegateFn(ref *block.Header, chain ChainContext) vm.UndelegateFunc {
 			return err
 		}
 
-		//add rosetta log
+		// add rosetta log
 		if rosettaTracer != nil {
 			rosettaTracer.AddRosettaLog(
 				vm.CALL,
@@ -300,7 +301,7 @@ func CollectRewardsFn(ref *block.Header, chain ChainContext) vm.CollectRewardsFu
 			BlockNumber: ref.Number().Uint64(),
 		})
 
-		//add rosetta log
+		// add rosetta log
 		if rosettaTracer != nil {
 			rosettaTracer.AddRosettaLog(
 				vm.CALL,
@@ -316,7 +317,7 @@ func CollectRewardsFn(ref *block.Header, chain ChainContext) vm.CollectRewardsFu
 	}
 }
 
-//func MigrateDelegationsFn(ref *block.Header, chain ChainContext) vm.MigrateDelegationsFunc {
+// func MigrateDelegationsFn(ref *block.Header, chain ChainContext) vm.MigrateDelegationsFunc {
 //	return func(db vm.StateDB, migrationMsg *stakingTypes.MigrationMsg) ([]interface{}, error) {
 //		// get existing delegations
 //		fromDelegations, err := chain.ReadDelegationsByDelegator(migrationMsg.From)
@@ -336,7 +337,7 @@ func CollectRewardsFn(ref *block.Header, chain ChainContext) vm.CollectRewardsFu
 //		}
 //		return delegates, nil
 //	}
-//}
+// }
 
 // calculate the gas for migration; no checks done here similar to other functions
 // the checks are handled by staking_verifier.go, ex, if you try to delegate to an address

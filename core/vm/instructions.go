@@ -18,6 +18,7 @@ package vm
 
 import (
 	"errors"
+	"github.com/harmony-one/harmony/internal/utils"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -949,6 +950,10 @@ func makeLog(size int) executionFunc {
 			// core/state doesn't know the current block number.
 			BlockNumber: interpreter.evm.BlockNumber.Uint64(),
 		})
+
+		if size > 0 {
+			utils.Logger().Info().Msgf("tx make log: nonce=%d, topic=%s", interpreter.evm.Nonce, topics[0])
+		}
 
 		interpreter.intPool.put(mStart, mSize)
 		return nil, nil

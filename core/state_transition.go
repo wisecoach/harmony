@@ -81,7 +81,7 @@ type StateTransition struct {
 // Message represents a message sent to a contract.
 type Message interface {
 	From() common.Address
-	//FromFrontier() (common.Address, error)
+	// FromFrontier() (common.Address, error)
 	To() *common.Address
 
 	GasPrice() *big.Int
@@ -243,7 +243,7 @@ func (st *StateTransition) TransitionDb() (ExecutionResult, error) {
 		ret, st.gas, vmErr = evm.Call(sender, st.to(), st.data, st.gas, st.value)
 	}
 	if vmErr != nil {
-		utils.Logger().Debug().Err(vmErr).Msg("VM returned with error")
+		utils.Logger().Info().Err(vmErr).Msg("VM returned with error")
 		// The only possible consensus-error would be if there wasn't
 		// sufficient balance to make the transfer happen. The first
 		// balance transfer may never fail.

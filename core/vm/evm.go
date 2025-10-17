@@ -61,7 +61,7 @@ type (
 	UndelegateFunc      func(db StateDB, rosettaTracer RosettaTracer, stakeMsg *stakingTypes.Undelegate) error
 	CollectRewardsFunc  func(db StateDB, rosettaTracer RosettaTracer, stakeMsg *stakingTypes.CollectRewards) error
 	// Used for migrating delegations via the staking precompile
-	//MigrateDelegationsFunc    func(db StateDB, migrationMsg *stakingTypes.MigrationMsg) ([]interface{}, error)
+	// MigrateDelegationsFunc    func(db StateDB, migrationMsg *stakingTypes.MigrationMsg) ([]interface{}, error)
 	CalculateMigrationGasFunc func(db StateDB, migrationMsg *stakingTypes.MigrationMsg, homestead bool, istanbul bool) (uint64, error)
 )
 
@@ -171,6 +171,7 @@ type Context struct {
 	VRF         common.Hash    // Provides information for VRF
 
 	TxType types.TransactionType
+	Nonce  uint64
 
 	CreateValidator       CreateValidatorFunc
 	EditValidator         EditValidatorFunc
@@ -236,7 +237,7 @@ func NewEVM(ctx Context, statedb StateDB, chainConfig *params.ChainConfig, vmCon
 		interpreters: make([]Interpreter, 0, 1),
 	}
 
-	//if chainConfig.IsS3(ctx.EpochNumber) {
+	// if chainConfig.IsS3(ctx.EpochNumber) {
 	//	to be implemented by EVM-C and Wagon PRs.
 	//	if vmConfig.EWASMInterpreter != "" {
 	//	 extIntOpts := strings.Split(vmConfig.EWASMInterpreter, ":")
@@ -250,7 +251,7 @@ func NewEVM(ctx Context, statedb StateDB, chainConfig *params.ChainConfig, vmCon
 	//		evm.interpreters = append(evm.interpreters, NewEWASMInterpreter(evm, vmConfig))
 	//	}
 	//	panic("No supported ewasm interpreter yet.")
-	//}
+	// }
 
 	// vmConfig.EVMInterpreter will be used by EVM-C, it won't be checked here
 	// as we always want to have the built-in EVM as the failover option.

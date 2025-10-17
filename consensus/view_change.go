@@ -235,6 +235,8 @@ func (consensus *Consensus) startViewChange() {
 		return
 	}
 
+	utils.Logger().Info().Stack().Msg("[startViewChange] start view change")
+
 	consensus.consensusTimeout[timeoutConsensus].Stop()
 	consensus.consensusTimeout[timeoutBootstrap].Stop()
 	consensus.current.SetMode(ViewChanging)

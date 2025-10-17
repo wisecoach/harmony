@@ -75,7 +75,7 @@ func (consensus *Consensus) ProposeNewBlock(commitSigs chan []byte) (*types.Bloc
 
 	// Add VRF
 	if consensus.Blockchain().Config().IsVRF(header.Epoch()) {
-		//generate a new VRF for the current block
+		// generate a new VRF for the current block
 		if err := consensus.GenerateVrfAndProof(header); err != nil {
 			return nil, err
 		}

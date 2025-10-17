@@ -75,7 +75,7 @@ func New(
 	header := blockfactory.NewFactory(chain.Config()).NewHeader(epoch).With().
 		ParentHash(parent.Hash()).
 		Number(num.Add(num, common.Big1)).
-		GasLimit(worker.GasFloor(epoch)). //core.CalcGasLimit(parent, worker.gasFloor, worker.gasCeil)).
+		GasLimit(worker.GasFloor(epoch)). // core.CalcGasLimit(parent, worker.gasFloor, worker.gasCeil)).
 		Time(big.NewInt(timestamp)).
 		ShardID(chain.ShardID()).
 		Header()
@@ -90,8 +90,8 @@ func newWorker(config *params.ChainConfig, chain, beacon core.BlockChain) *Worke
 		factory:  blockfactory.NewFactory(config),
 		chain:    chain,
 		beacon:   beacon,
-		gasFloor: 80000000,
-		gasCeil:  120000000,
+		gasFloor: 8000000000,
+		gasCeil:  12000000000,
 	}
 }
 
@@ -209,6 +209,12 @@ func (w *Worker) CommitTransactions(
 
 	// HARMONY TXNS
 	normalTxns := types.NewTransactionsByPriceAndNonce(w.current.signer, w.current.ethSigner, pendingNormal)
+
+	nums := ""
+	for address, transactions := range pendingNormal {
+		nums += fmt.Sprintf("%s: %d, ", address.Hex(), len(transactions))
+	}
+	utils.Logger().Info().Msgf("Committing normal transactions: %s", nums)
 
 	w.CommitSortedTransactions(normalTxns, coinbase)
 
@@ -568,7 +574,7 @@ func (w *Worker) FinalizeNewBlock(
 
 	// Put shard state into header
 	if shardState != nil && len(shardState.Shards) != 0 {
-		//we store shardstatehash in header only before prestaking epoch (header v0,v1,v2)
+		// we store shardstatehash in header only before prestaking epoch (header v0,v1,v2)
 		if !w.config.IsPreStaking(w.current.header.Epoch()) {
 			w.current.header.SetShardStateHash(shardState.Hash())
 		}

@@ -344,7 +344,7 @@ func setupNodeAndRun(hc harmonyconfig.HarmonyConfig) {
 
 	// Check NTP and time accuracy
 	// It skips the time accuracy check on the localnet since all nodes are running on the same machine
-	if hc.Network.NetworkType != nodeconfig.Localnet {
+	if !(hc.Network.NetworkType == nodeconfig.Localnet || hc.Network.NetworkType == nodeconfig.Exprnet) {
 		clockAccuracyResp, err := ntp.CheckLocalTimeAccurate(nodeConfig.NtpServer)
 		if !clockAccuracyResp.IsAccurate() {
 			if clockAccuracyResp.AllNtpServersTimedOut() {
@@ -378,7 +378,7 @@ func setupNodeAndRun(hc harmonyconfig.HarmonyConfig) {
 		revert(chain, hc)
 	}
 
-	//// code to handle pre-image export, import and generation
+	// // code to handle pre-image export, import and generation
 	if hc.Preimage != nil {
 		if hc.Preimage.ImportFrom != "" {
 			if err := core.ImportPreimages(
@@ -550,6 +550,8 @@ func nodeconfigSetShardSchedule(config harmonyconfig.HarmonyConfig) {
 		shard.Schedule = shardingconfig.PartnerSchedule
 	case nodeconfig.Stressnet:
 		shard.Schedule = shardingconfig.StressNetSchedule
+	case nodeconfig.Exprnet:
+		shard.Schedule = shardingconfig.NewExprnetSchedule(config.General.ShardNum, config.General.ShardSize)
 	case nodeconfig.Devnet:
 		var dnConfig harmonyconfig.DevnetConfig
 		if config.Devnet != nil {
@@ -674,6 +676,7 @@ func createGlobalConfig(hc harmonyconfig.HarmonyConfig) (*nodeconfig.ConfigType,
 	nodeConfig.DebugMode = hc.Sync.StagedSyncCfg.DebugMode
 	// P2P private key is used for secure message transfer between p2p nodes.
 	nodeConfig.P2PPriKey, _, err = utils.LoadKeyFromFile(hc.P2P.KeyFile)
+	nodeConfig.GenesisConfigFile = hc.General.GenesisConfigFile
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot load or create P2P key at %#v",
 			hc.P2P.KeyFile)
@@ -759,7 +762,7 @@ func setupChain(hc harmonyconfig.HarmonyConfig, nodeConfig *nodeconfig.ConfigTyp
 
 	chainConfig := nodeConfig.GetNetworkType().ChainConfig()
 	collection := shardchain.NewCollection(
-		&hc, chainDBFactory, &core.GenesisInitializer{NetworkType: nodeConfig.GetNetworkType()}, engine, &chainConfig,
+		&hc, chainDBFactory, &core.GenesisInitializer{NetworkType: nodeConfig.GetNetworkType(), ConfigFilePath: nodeConfig.GenesisConfigFile}, engine, &chainConfig,
 	)
 	for shardID, archival := range nodeConfig.ArchiveModes() {
 		if archival {
@@ -870,6 +873,8 @@ func setupConsensusAndNode(hc harmonyconfig.HarmonyConfig, nodeConfig *nodeconfi
 	currentNode.NodeConfig.SetShardGroupID(nodeconfig.NewGroupIDByShardID(nodeconfig.ShardID(nodeConfig.ShardID)))
 	currentNode.NodeConfig.SetClientGroupID(nodeconfig.NewClientGroupIDByShardID(shard.BeaconChainShardID))
 	currentNode.NodeConfig.ConsensusPriKey = nodeConfig.ConsensusPriKey
+
+	utils.Logger().Info().Msgf("use consensus key: %s", currentNode.NodeConfig.ConsensusPriKey.GetPublicKeys().SerializeToHexStr())
 
 	// This needs to be executed after consensus setup
 	if err := currentConsensus.InitConsensusWithValidators(); err != nil {
@@ -1039,7 +1044,7 @@ func setupStagedSyncService(node *node.Node, host p2p.Host, hc harmonyconfig.Har
 			InsertHook: node.BeaconSyncHook,
 		}
 	}
-	//Setup stream sync service
+	// Setup stream sync service
 	s := stagedstreamsync.NewService(host, blockchains, node.Consensus, sConfig, hc.General.DataDir)
 
 	node.RegisterService(service.StagedStreamSync, s)
