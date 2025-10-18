@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 SERVERS=("zjnu@10.7.95.200" "zjnu@10.7.95.201" "zjnu@10.7.95.202" "zjnu@10.7.95.203")
-WORK_DIR="/home/zjnu/ssc-harmony"
+WORK_DIR="/home/zjnu/go/src/github.com/harmony-one/ssc-harmony"
 ROOT=$WORK_DIR
 t=$(date +"%Y%m%d-%H%M%S")
 log_folder="${ROOT}/tmp_log/log-$t"
@@ -126,8 +126,6 @@ function deploy() {
           args=("${args[@]}" --blskey_file "BLSKEY")
         elif [[ -f "$bls_key" ]]; then
           args=("${args[@]}" --blskey_file "${ROOT}/${bls_key}")
-          # 同时设置ssc.bls-key-file
-          args=("${args[@]}" --ssc.bls-key-path "${ROOT}/${bls_key}")
         elif [[ -d "$bls_key" ]]; then
           args=("${args[@]}" --blsfolder "${ROOT}/${bls_key}")
         else
@@ -186,4 +184,4 @@ function test() {
     deploy 4 5 dev
 }
 
-#test
+test
