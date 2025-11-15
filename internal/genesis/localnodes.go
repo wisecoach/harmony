@@ -1,5 +1,11 @@
 package genesis
 
+import (
+	"encoding/json"
+	"github.com/harmony-one/harmony/internal/utils"
+	"os"
+)
+
 // LocalHarmonyAccounts are the accounts for the initial genesis nodes used for local test.
 var LocalHarmonyAccounts = []DeployAccount{
 	{Index: " 0 ", Address: "one1pdv9lrdwl0rg5vglh4xtyrv3wjk3wsqket7zxy", BLSPublicKey: "65f55eb3052f9e9f632b2923be594ba77c55543f5c58ee1454b9cfd658d25e06373b0f7d42a19c84768139ea294f6204"},
@@ -180,4 +186,19 @@ var ExprHarmonyAccounts = []DeployAccount{
 	{Index: " 47 ", Address: "one1savspenqaya3m8sa43p8m8pjqqhynpsavnxkcy", EthAddr: "0xdC8AdE08DbC187a08d37A6a4856334165ED4f57b", BLSPublicKey: "32235fed94eaf706c9655d6f440ffcfc2f3781e3ff10a979d790b38889adc740ee4242e699bd915b1d9e7d654fb97c10", ShardID: 3},
 	{Index: " 48 ", Address: "one1uqu43kecycvwgmzqrk7v3dr9l5wrtaet3py7jx", EthAddr: "0xC707404d07f4C777f7166cB8dCfc0682b9b1B4E9", BLSPublicKey: "933dc5536f621b03d18157c8ccbca65f833295c851f840ed0d8467b184b28a99a7e43eac467b8398c4b84110403cb80a", ShardID: 3},
 	{Index: " 49 ", Address: "one1y8qh5egvl0twg6grnp7dl953rqnhw28qetj7a4", EthAddr: "0xe71B3E0925c3240E6d395f2E79EF1ae0eDE64482", BLSPublicKey: "c8b982ba47eb204c413e7ec451bd125e3550a7df8298e17035326866c54fd4dfbd84684923156f04d9b5cb635444410d", ShardID: 3},
+}
+
+func init() {
+	// 查看文件 .hmy/expr_deploy_accounts 是否存在
+	if _, err := os.Stat(".hmy/expr_deploy_accounts.json"); err == nil {
+		// 读取json，反序列化，并设置为ExprHarmonyAccounts
+		jsonFile, err := os.Open(".hmy/expr_deploy_accounts.json")
+		if err != nil {
+			utils.Logger().Error().Msgf("Failed to open expr_deploy_accounts.json: %v", err)
+			return
+		}
+		defer jsonFile.Close()
+		json.NewDecoder(jsonFile).Decode(&ExprHarmonyAccounts)
+		utils.Logger().Info().Msgf("Loaded %d expr_deploy_accounts from .hmy/expr_deploy_accounts.json", len(ExprHarmonyAccounts))
+	}
 }

@@ -633,9 +633,9 @@ func (w *Worker) FinalizeNewBlock(
 }
 
 func (w *Worker) GasFloor(epoch *big.Int) uint64 {
-	if w.config.IsBlockGas30M(epoch) {
-		return 30_000_000
-	}
+	// if w.config.IsBlockGas30M(epoch) {
+	// 	return 30_000_000
+	// }
 
 	return w.gasFloor
 }

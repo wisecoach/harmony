@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 SERVERS=("zjnu@10.7.95.200" "zjnu@10.7.95.201" "zjnu@10.7.95.202" "zjnu@10.7.95.203")
-WORK_DIR="/home/zjnu/go/src/github.com/harmony-one/ssc-harmony"
+WORK_DIR="/home/zjnu/go/src/github.com/harmony-one/harmony"
 ROOT=$WORK_DIR
 t=$(date +"%Y%m%d-%H%M%S")
 log_folder="${ROOT}/tmp_log/log-$t"
@@ -69,12 +69,16 @@ function launch_bootnode() {
 }
 
 function deploy() {
-    env=${3-dev}
-    config=./test/configs/${env}/launch_config_${env}.txt
-    launch_bootnode
-
     shard_num=$1
+    shard=$1
     shard_size=$2
+    validator=$2
+    ssc=$3
+    delay=$4
+    env="dev"
+
+    config="./test/configs/${env}/shard=${shard}_validator=${validator}_ssc=${ssc}_delay=${delay}/launch_config_${env}.txt"
+    launch_bootnode
 
     unset -v base_args
     declare -a base_args args
@@ -109,7 +113,7 @@ function deploy() {
         echo "shard_id=$shard_id, cnt=${per_shard_cnt[$shard_id]}, num=${shard_num}"
 
         mode='validator'
-        node_config='test/configs/dev/default_config_dev.toml'
+        node_config="test/configs/${env}/shard=${shard}_validator=${validator}_ssc=${ssc}_delay=${delay}/default_config_${env}.toml"
 
         args=("${base_args[@]}" --ip "${ip}" --port "${port}" --key "/tmp/${ip}-${port}.key" --db_dir "${ROOT}/db/db-${ip}-${port}" "--broadcast_invalid_tx=false" --shard_num "${shard_num}" --shard_size "${shard_size}" --run.shard "${shard_id}")
         if [[ -z "$ip" || -z "$port" || "$ip" == "#" ]]; then
@@ -179,9 +183,18 @@ function download_log() {
 }
 
 function test() {
+    shard=$1
+    validator=$2
+    ssc=$3
+    delay=$4
     clean
     preset
-    deploy 4 5 dev
+    deploy $shard $validator $ssc $delay
 }
 
-test
+shard=${1-4}
+validator=${2-4}
+ssc=${3-1}
+delay=${4-5}
+
+test $shard $validator $ssc $delay
