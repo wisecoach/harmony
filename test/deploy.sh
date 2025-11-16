@@ -89,7 +89,7 @@ function simple_launch_shard() {
     sleep 2
 
     echo $PWD
-    while read -r addr bls_key shard_id ip port; do
+    while read -r addr ethAddrHex bls_key shard_id ip port; do
         if [[ "$shard_id" -ge "${shard_num}" ]]; then
           echo "shard_num ${shard_num} is full, skipping node ${i}"
           continue
@@ -156,10 +156,10 @@ function simple_launch_shard() {
           ;;
         esac
 
-        echo "begin to work: dryrun: ${DRYRUN}" "bin: ${ROOT}/bin/harmony" "${args[@]}" "${extra_args[@]}"
+        echo "begin to work: dryrun: ${DRYRUN}" "bin: ${ROOT}/bin/harmony" "${args[@]}"
 
         # Start the node
-        ${DRYRUN} "${ROOT}/bin/harmony" "${args[@]}" "${extra_args[@]}" 2>&1 | tee -a "${LOG_FILE}" &
+        ${DRYRUN} "${ROOT}/bin/harmony" "${args[@]}" 2>&1 | tee -a "${LOG_FILE}" &
     done <<< "$(cat "${config}")"
 }
 

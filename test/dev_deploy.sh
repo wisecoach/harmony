@@ -97,7 +97,7 @@ function deploy() {
     sleep 2
 
     echo $PWD
-    while read -r addr bls_key shard_id ip port; do
+    while read -r addr ethAddrHex bls_key shard_id ip port; do
         if [[ "$shard_id" -ge "${shard_num}" ]]; then
           echo "shard_num ${shard_num} is full, skipping node ${i}"
           continue
@@ -164,7 +164,7 @@ function deploy() {
           ;;
         esac
 
-        cmd="nohup ${ROOT}/bin/harmony ${args[@]} ${extra_args[@]} > /dev/null &"
+        cmd="nohup ${ROOT}/bin/harmony ${args[@]} > /dev/null &"
         echo "begin to work: $cmd"
         call_for_shard $shard_id "$cmd" &
 

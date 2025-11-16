@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/harmony-one/harmony/core"
 	"github.com/pelletier/go-toml"
 	"gopkg.in/yaml.v2"
 	"os"
@@ -62,10 +61,13 @@ func buildConfig(config ShardConfig) {
 	os.WriteFile(local_path+"/"+"launch_config_local.txt", []byte(strings.Join(local_launch_config_lines, "\n")), 0644)
 	os.WriteFile(dev_path+"/"+"launch_config_dev.txt", []byte(strings.Join(dev_launch_config_lines, "\n")), 0644)
 
-	local_genesis := &core.Genesis{
+	type GenesisConfig struct {
+		GenesisAccountsDir string `json:"genesis_accounts_dir" yaml:"genesis_accounts_dir"`
+	}
+	local_genesis := &GenesisConfig{
 		GenesisAccountsDir: ".hmy/expr_accounts",
 	}
-	dev_genesis := &core.Genesis{
+	dev_genesis := &GenesisConfig{
 		GenesisAccountsDir: ".hmy/expr_accounts",
 	}
 	writeYaml(local_path+"/"+"genesis_config_local.yaml", local_genesis)
